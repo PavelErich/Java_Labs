@@ -1,0 +1,7 @@
+#Игнорируем все файлы
+*
+#Кроме .java, .gitignore, README.md
+!src
+!*.java
+!/.gitignore
+!/README.md
