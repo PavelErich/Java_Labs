@@ -17,7 +17,7 @@ public class FractalExplorer {
         this.width = width;
         this.height = height;
         jid = new JImageDisplay(width, height);
-        fg = new Mandelbrot();
+        fg = new Tricorn();
         d = new Rectangle2D.Double();
         fg.getInitialRange(d);
     }
