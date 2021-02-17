@@ -20,4 +20,7 @@ public class Tricorn extends FractalGenerator {
         if(iterations == MAX_ITERATIONS) return -1;
         return iterations;
     }
+    public String toString(){
+        return "Tricorn";
+    }
 }
