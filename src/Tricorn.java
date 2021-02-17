@@ -1,7 +1,6 @@
 import java.awt.geom.Rectangle2D;
 
 public class Tricorn extends FractalGenerator {
-    public static final int MAX_ITERATIONS = 2000;
     public void getInitialRange(Rectangle2D.Double range){
         range.x = -2;
         range.y = -2;

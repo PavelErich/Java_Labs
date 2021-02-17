@@ -13,6 +13,11 @@ public class FractalExplorer {
     private JImageDisplay jid;
     private FractalGenerator fg;
     private Rectangle2D.Double d;
+    private int rows_remaining;
+
+    private JComboBox<FractalGenerator> combo;
+    private JButton reset;
+    private JButton save;
 
     public FractalExplorer(int width, int height){
         this.width = width;
@@ -27,31 +32,65 @@ public class FractalExplorer {
         public void mousePressed(MouseEvent e){ }
         public void mouseReleased(MouseEvent e){ }
         public void mouseClicked(MouseEvent e){
-            double xCoord = FractalGenerator.getCoord(d.x, d.x + d.width,600,e.getX());
-            double yCoord = FractalGenerator.getCoord(d.y, d.y + d.height, 600, e.getY());
-            fg.recenterAndZoomRange(d, xCoord, yCoord, 0.5);
-            drawFractal();
+            if(rows_remaining == 0) {
+                double xCoord = FractalGenerator.getCoord(d.x, d.x + d.width, 600, e.getX());
+                double yCoord = FractalGenerator.getCoord(d.y, d.y + d.height, 600, e.getY());
+                fg.recenterAndZoomRange(d, xCoord, yCoord, 0.5);
+                drawFractal();
+            }
         }
         public void mouseEntered(MouseEvent e){ }
         public void mouseExited(MouseEvent e){ }
     }
 
-    private void drawFractal(){
-        for(int y = 0; y < jid.getHeight(); y++){
-            for(int x = 0; x < jid.getWidth(); x++){
+    private class FractalWorker extends SwingWorker<Object, Object> {
+        private int row;
+        private int size;
+        int rgb[];
+        FractalWorker(int y, int size){
+            this.row = y;
+            this.size = size;
+        }
+        public Object doInBackground(){
+            rgb = new int[size];
+            for(int x = 0; x < size; x++){
                 double xCoord = FractalGenerator.getCoord(d.x, d.x + d.width, 600, x);
-                double yCoord = FractalGenerator.getCoord(d.y, d.y + d.height, 600, y);
+                double yCoord = FractalGenerator.getCoord(d.y, d.y + d.height, 600, row);
                 int iter = fg.numIterations(xCoord, yCoord);
                 if(iter == -1)
-                    jid.drawPixel(x, y, 0);
+                    rgb[x] = 0;
                 else{
                     float hue = 0.7f + (float)iter / 200f;
                     int rgbColor = Color.HSBtoRGB(hue, 1f, 1f);
-                    jid.drawPixel(x, y, rgbColor);
+                    rgb[x] = rgbColor;
                 }
             }
+            return null;
         }
-        jid.repaint();
+        public void done(){
+            for(int x = 0; x < size; x++)
+                jid.drawPixel(x, row, rgb[x]);
+            jid.repaint(0, 0, row,size,1);
+            rows_remaining--;
+            if(rows_remaining <= 0)
+                enableUI(true);
+        }
+    }
+
+    void enableUI(boolean val){
+        combo.setEnabled(val);
+        reset.setEnabled(val);
+        save.setEnabled(val);
+    }
+
+    private void drawFractal(){
+        enableUI(false);
+        rows_remaining = jid.getHeight();
+        FractalWorker workers[] = new FractalWorker[jid.getHeight()];
+        for(int y = 0; y < jid.getHeight(); y++)
+            workers[y] = new FractalWorker(y, jid.getWidth());
+        for(int y = 0; y < jid.getHeight(); y++)
+            workers[y].execute();
     }
 
     public void createAndShowGUI(){
@@ -64,7 +103,7 @@ public class FractalExplorer {
         jid.addMouseListener(zoom);
 
         JPanel down_panel = new JPanel();
-        JButton save = new JButton("Save Image");
+        save = new JButton("Save Image");
         save.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fc = new JFileChooser();
@@ -82,7 +121,7 @@ public class FractalExplorer {
                 }
             }
         });
-        JButton reset = new JButton("Reset Display");
+        reset = new JButton("Reset Display");
         reset.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
                 fg.getInitialRange(d);
@@ -94,7 +133,7 @@ public class FractalExplorer {
         contentPane.add(down_panel, BorderLayout.SOUTH);
 
         JPanel up_panel = new JPanel();
-        JComboBox<FractalGenerator> combo = new JComboBox<>();
+        combo = new JComboBox<>();
         combo.addItem(fg);
         combo.addItem(new Tricorn());
         combo.addItem(new BurningShip());

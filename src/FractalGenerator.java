@@ -4,7 +4,7 @@ import java.awt.geom.Rectangle2D;
  * generators that can be viewed in the Fractal Explorer.
  */
 public abstract class FractalGenerator {
-
+    public static final int MAX_ITERATIONS = 2000;
     /**
      * This static helper function takes an integer coordinate and converts it
      * into a double-precision value corresponding to a specific range.  It is
