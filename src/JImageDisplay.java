@@ -2,7 +2,7 @@ import javax.swing.JComponent;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 public class JImageDisplay extends JComponent{
-    private BufferedImage image;
+    public BufferedImage image;
     JImageDisplay(int width, int height){
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException(

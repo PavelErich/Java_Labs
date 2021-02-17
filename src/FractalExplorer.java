@@ -1,10 +1,11 @@
 import javax.swing.*;
+import javax.swing.filechooser.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class FractalExplorer {
     private int width;
@@ -17,7 +18,7 @@ public class FractalExplorer {
         this.width = width;
         this.height = height;
         jid = new JImageDisplay(width, height);
-        fg = new BurningShip();
+        fg = new Mandelbrot();
         d = new Rectangle2D.Double();
         fg.getInitialRange(d);
     }
@@ -59,19 +60,55 @@ public class FractalExplorer {
         Container contentPane = frame.getContentPane();
 
         contentPane.add(jid, BorderLayout.CENTER);
-
         ZoomHandler zoom = new ZoomHandler();
         jid.addMouseListener(zoom);
 
-        JButton clear = new JButton("Reset Display");
-        contentPane.add(clear, BorderLayout.SOUTH);
-
-        clear.addActionListener(new ActionListener() {
+        JPanel down_panel = new JPanel();
+        JButton save = new JButton("Save Image");
+        save.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fc = new JFileChooser();
+                FileFilter filter = new FileNameExtensionFilter("PNG Images", "png");
+                fc.setFileFilter(filter);
+                fc.setAcceptAllFileFilterUsed(false);
+                int res = fc.showSaveDialog(frame);
+                if(res == JFileChooser.APPROVE_OPTION){
+                    File selectedFile = fc.getSelectedFile();
+                    try {
+                        ImageIO.write(jid.image, "png", selectedFile);
+                    } catch(IOException exp) {
+                        JOptionPane.showMessageDialog(frame, exp.getMessage(), "Cannot Save Image", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+        JButton reset = new JButton("Reset Display");
+        reset.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
                 fg.getInitialRange(d);
                 drawFractal();
             }
         });
+        down_panel.add(save);
+        down_panel.add(reset);
+        contentPane.add(down_panel, BorderLayout.SOUTH);
+
+        JPanel up_panel = new JPanel();
+        JComboBox<FractalGenerator> combo = new JComboBox<>();
+        combo.addItem(fg);
+        combo.addItem(new Tricorn());
+        combo.addItem(new BurningShip());
+        combo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                fg = (FractalGenerator) combo.getSelectedItem();
+                fg.getInitialRange(d);
+                drawFractal();
+            }
+        });
+        JLabel label = new JLabel("Fractal: ");
+        up_panel.add(label);
+        up_panel.add(combo);
+        contentPane.add(up_panel, BorderLayout.NORTH);
 
         frame.pack();
         frame.setVisible(true);
