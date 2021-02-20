@@ -1,5 +1,4 @@
 public class URLDepthPair {
-    private final String URL_PREFIX = "http://";
     private String Url;
     private int Depth;
 
@@ -12,8 +11,6 @@ public class URLDepthPair {
     public int getDepth() { return Depth; }
 
     public void setUrl(String url) {
-        if(!url.startsWith(URL_PREFIX))
-            throw new IllegalArgumentException("URL cannot starts with URL_PREFIX");
         Url = url;
     }
     public void setDepth(int depth) {
@@ -30,7 +27,7 @@ public class URLDepthPair {
         return Url.equals(other.Url);// && Depth == other.Depth;
     }
     public int hashCode(){
-        return 31 * Url.hashCode() + Depth;
+        return Url.hashCode();// + Depth;
     }
     public String toString(){
         return "[URL: " + Url + ", Depth: " + Depth + "]";
