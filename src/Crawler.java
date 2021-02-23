@@ -1,133 +1,97 @@
-import java.net.*;
-import java.io.*;
 import java.util.ArrayDeque;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.lang.*;
-
-/*
-Получить веб-страницу
-Проанализировать её
-Добавить найденные ссылки в no_visited (очередь) если только нет в visited
-А при добавлении из no_visited проверяется нет ли её в visited. Два раза по O(1)
- */
 
 public class Crawler {
+    //Строковые константы
     private static final String OPEN_TAG = "<a ";
     private static final String CLOSE_TAG = "</a>";
     private static final String PAR_HREF = "href=\"";
-    private static final String URL_PREFIX = "http://";
 
+    //Максимальная глубина
     private int max_depth;
+    //Глубина в данный момент
     private int curr_depth;
+    //Url сайта на котором происходит parse
+    private Url curr_url;
 
-    private ArrayDeque<URLDepthPair> no_visited;
-    private HashSet<URLDepthPair> visited;
+    //Посещенные сайты
+    private final HashSet<URLDepthPair> visited;
+    //Не посещенные сайты
+    private final ArrayDeque<URLDepthPair> no_visited;
 
-    public Crawler(){
+    public Crawler() {
         visited = new HashSet<>();
         no_visited = new ArrayDeque<>();
     }
 
-   private void parseUrls(StringBuffer page){
+    //Функция принимает  страницу и добавляет
+    //все найденные ссылки в no_visited
+    private void parseUrls(StringBuilder page) {
         int open = page.indexOf(OPEN_TAG);
-        int href = 0, close = 0;
-        while(open != -1){
+        int close = page.indexOf(CLOSE_TAG);
+        int href, close_href;
+        while(open != -1) {
             href = page.indexOf(PAR_HREF, open + OPEN_TAG.length());
-            if(href != -1) {
-                int chref = page.indexOf("\"", href + PAR_HREF.length());
-                addValidUrl(page.substring(href + PAR_HREF.length(), chref));
+            if(href != -1 && href < close && href > open) {
+                close_href = page.indexOf("\"", href + PAR_HREF.length());
+                addValidUrl(page.substring(href + PAR_HREF.length(), close_href));
             }
-            close = page.indexOf(CLOSE_TAG, open + OPEN_TAG.length());
             open = page.indexOf(OPEN_TAG, close + CLOSE_TAG.length());
+            close = page.indexOf(CLOSE_TAG, open + OPEN_TAG.length());
         }
     }
 
-    private void addValidUrl(String url){
-        url = url.trim();
-        if(!url.startsWith(URL_PREFIX)) return;
-        url = url.substring(URL_PREFIX.length());
-        if(url.endsWith("/"))
-            url = url.substring(0, url.length() - 1);
+    //Дополнительная функция, проверяющая валидной Url
+    //и добавление в no_visited
+    private void addValidUrl(String link) {
+        link = link.trim();
+        Url url;
+        if(link.startsWith("/"))
+            url = new Url(curr_url.getFullHost() + link);
+        else if(link.startsWith("http"))
+            url = new Url(link);
+        else return;
         URLDepthPair udp = new URLDepthPair(url, curr_depth);
-        if(visited.contains(udp) || no_visited.contains(udp))
-            return;
-        if(url.endsWith(".jpg") || url.endsWith(".mp4"))
-            visited.add(udp);
-        else no_visited.add(udp);
+        no_visited.add(udp);
     }
 
-    private int split(String url){
-        int index = url.indexOf("/");
-        if(index == -1) return url.length();
-        return index;
-    }
-
-    private StringBuffer getPage(String url){
-        StringBuffer page = null;
-        try {
-            int index = split(url);
-            String host = url.substring(0, index == url.length() ? index : index - 1);
-            String site = url.substring(index == url.length() ? index : index + 1);
-            Socket s = new Socket(host, 80);
-            s.setSoTimeout(10000);
-            PrintWriter wtr = new PrintWriter(s.getOutputStream());
-
-            wtr.println("GET /"+site+" HTTP/1.1");
-            wtr.println("Host: " + host + ":80");
-            wtr.println("Connection: Close");
-            wtr.println();
-            wtr.flush();
-
-            InputStreamReader isr = new InputStreamReader(s.getInputStream());
-            BufferedReader reader = new BufferedReader(isr);
-            page = new StringBuffer();
-            String new_line = "";
-
-            while ((new_line = reader.readLine()) != null)
-                page.append(new_line);
-
-            reader.close();
-            wtr.close();
-            s.close();
-        } catch (Exception e){}
-        return page;
-    }
-
+    //Функция рекурсивно берет сайт из
+    //no_visited парся его.
     private void getSites() {
+        //Если достигли max_depth - 1, то заканчиваем парсинг
         if(curr_depth == max_depth - 1){
-            for(URLDepthPair el : no_visited)
-                visited.add(el);
-            no_visited.clear();
+            while(!no_visited.isEmpty())
+                visited.add(no_visited.pollFirst());
             return;
         }
+        //Или если no_visited пустой
         if(no_visited.size() == 0)
             return;
-        StringBuffer page = null;
+        StringBuilder page;
         int size = no_visited.size();
         curr_depth++;
-        int test = 0;
         for(int i = 0; i < size; i++) {
-            URLDepthPair tmp = no_visited.pollFirst();
-            if(visited.contains(tmp)) continue;
-            page = getPage(tmp.getUrl());
-            visited.add(tmp);
-            if(page != null && page.indexOf("HTTP/1.1 200") != -1)
-                parseUrls(page);
+            URLDepthPair el = no_visited.pollFirst();
+            if(visited.contains(el) || el == null) continue;
+            visited.add(el);
+            System.out.println("Current depth: " + curr_depth + " Index site: " + i + " Visited size: " + visited.size());
+            curr_url = el.getUrl();
+            page = Request.getPage(curr_url);
+            if(page != null) parseUrls(page);
         }
 
         getSites();
     }
 
+    //Принимает ссылку на первый сайт в формате protocol://host:port/path
+    //и максимальную глубину для парсинга
     public HashSet<URLDepthPair> getSites(String site, int _max_depth) {
         if(_max_depth < 1)
             throw new IllegalArgumentException("Depth cannot be less than 1");
-        if(!site.startsWith(URL_PREFIX))
-            throw new IllegalArgumentException("Url cannot starts with not http://");
         visited.clear();
         no_visited.clear();
         curr_depth = 0;
+        curr_url = new Url(site);
         max_depth = _max_depth;
         addValidUrl(site);
         getSites();

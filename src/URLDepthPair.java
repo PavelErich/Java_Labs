@@ -1,22 +1,20 @@
 public class URLDepthPair {
-    private String Url;
-    private int Depth;
+    private Url _url;
+    private int _depth;
 
-    public URLDepthPair(String url, int depth){
+    public URLDepthPair(Url url, int depth){
         setUrl(url);
         setDepth(depth);
     }
 
-    public String getUrl() { return Url; }
-    public int getDepth() { return Depth; }
+    public Url getUrl  () { return _url; }
+    public int getDepth() { return _depth; }
 
-    public void setUrl(String url) {
-        Url = url;
-    }
+    public void setUrl (Url url) { _url = url; }
     public void setDepth(int depth) {
         if(depth < 0)
             throw new IllegalArgumentException("Depth cannot be less than 0");
-        Depth = depth;
+        _depth = depth;
     }
 
     public boolean equals(Object obj){
@@ -24,12 +22,12 @@ public class URLDepthPair {
         if(obj == null || obj.getClass() != this.getClass())
             return false;
         URLDepthPair other = (URLDepthPair) obj;
-        return Url.equals(other.Url);// && Depth == other.Depth;
+        return _url.equals(other._url);// && Depth == other.Depth;
     }
     public int hashCode(){
-        return Url.hashCode();// + Depth;
+        return _url.hashCode();// + Depth;
     }
     public String toString(){
-        return "[URL: " + Url + ", Depth: " + Depth + "]";
+        return "[URL: " + getUrl() + ", Depth: " + getDepth() + "]";
     }
 }
