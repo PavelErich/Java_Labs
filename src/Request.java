@@ -7,7 +7,6 @@ public class Request {
     //Функция возвращающая веб-страницу
     static public StringBuilder getPage(Url url) {
         StringBuilder page = null;
-
         if(url.getProtocol().equals("http")) {
             Socket socket = null;
             BufferedReader reader = null;
@@ -46,7 +45,6 @@ public class Request {
                             page = getPage(temp);
                     }
                 }
-                else Logger.writeErrors("Error: " + tmp + " Url: " + url);
             }
             catch (Exception e) { page = null; }
 
